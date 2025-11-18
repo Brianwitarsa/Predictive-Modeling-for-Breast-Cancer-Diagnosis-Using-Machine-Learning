@@ -1,0 +1,131 @@
+---
+title: "Final Project"
+subtitle: "Machine Learning"
+author: "Brian Witarsa"
+date: last-modified
+format: 
+   html:
+     df-print: paged
+     embed-resources: true
+---
+
+# Final Project
+
+## Input Data
+
+### Question:
+
+```{r}
+# Read in the data
+library(tidyr)
+library(dplyr)
+library(partykit)
+library(rpart)
+library(class)
+library(ggplot2)
+library(corrplot)
+
+cancer_df <- read.csv('FNA_cancer.csv')
+glimpse(cancer_df)
+```
+
+## Exploratory Data Analysis
+
+```{r}
+colSums(is.na(cancer_df))
+```
+
+```{r}
+cancer_df$diagnosis <- as.factor(ifelse(cancer_df$diagnosis == "M", 1, 0))
+glimpse(cancer_df)
+```
+
+```{r}
+table(cancer_df$diagnosis)
+prop.table(table(cancer_df$diagnosis))
+
+# Create subsets based on variable names
+mean_vars <- cancer_df[, grep("_mean", names(cancer_df))]
+se_vars <- cancer_df[, grep("_se", names(cancer_df))]
+worst_vars <- cancer_df[, grep("_worst", names(cancer_df))]
+
+# correlation matrices for each subset
+corr_mean <- cor(mean_vars, use = "complete.obs")
+corr_se <- cor(se_vars, use = "complete.obs")
+corr_worst <- cor(worst_vars, use = "complete.obs")
+
+# heatmaps for each subset
+corrplot(corr_mean, method = "color", type = "upper", title = "Correlation - _mean variables", mar = c(0,0,1,0))
+corrplot(corr_se, method = "color", type = "upper", title = "Correlation - _se variables", mar = c(0,0,1,0))
+corrplot(corr_worst, method = "color", type = "upper", title = "Correlation - _worst variables", mar = c(0,0,1,0))
+```
+This code extracts three subsets of variables (\_mean, \_se, and \_worst) from the breast cancer dataset, computes correlation matrices for each subset, and visualizes them using corrplot. In the first heatmap, the \_mean variables show strong correlations among radius_mean, perimeter_mean, and area_mean, reflecting overlapping measures of cell size. In the second heatmap, the \_se variables (e.g., concavity_se, concave.points_se) also exhibit moderate to strong correlations, suggesting shared variability in cell shape. In the third heatmap, the \_worst subset highlights a distinct cluster of radius_worst, perimeter_worst, and area_worst as well. Together, these visualizations help identify redundant features, guide feature selection, and offer insights into how these measurements relate to each other for subsequent modeling.
+
+
+
+## Split into Train/Test
+
+```{r}
+n <- nrow(cancer_df)
+set.seed(1842)
+test_index <- sample.int(n,size=round(0.2*n))
+train_cancer <- cancer_df[-test_index,]
+test_cancer <- cancer_df[test_index,]
+
+glimpse(test_cancer)
+glimpse(train_cancer)
+```
+
+## Decision Trees
+
+```{r}
+cancer_tree <- rpart(diagnosis ~ ., data=train_cancer)
+cancer_tree
+plot(as.party(cancer_tree))
+
+tree_preds <- predict(cancer_tree, newdata=test_cancer, "class")
+confusion1 <- table(test_cancer$diagnosis, tree_preds, dnn=c("actual", "predicted"))
+confusion1
+
+accuracy1 <- sum(diag(confusion1)) / sum(confusion1)
+accuracy1
+```
+
+## K-Nearest Neighbors
+
+```{r}
+knn_preds <- knn(train=train_cancer[,-c(2,33)],test=test_cancer[,-c(2,33)],cl=train_cancer[, 2],k=7)
+con_matrix2 <- table(Predicted = knn_preds, Actual = test_cancer[, 2])
+con_matrix2
+
+accuracy2 <- sum(diag(con_matrix2)) / sum(con_matrix2)
+accuracy2
+
+```
+
+## Logistic Regression
+
+```{r}
+glm_model <- glm(diagnosis ~ ., data=train_cancer[, -c(1,33)], family = "binomial")
+summary(glm_model)
+```
+
+```{r}
+glm_pred <- predict(glm_model,newdata = test_cancer,type="response")
+
+confusion3 <- table(round(glm_pred),test_cancer$diagnosis)
+confusion3
+
+accuracy3 <- sum(diag(confusion3)) / sum(confusion3)
+accuracy3
+```
+
+### Model Accuracy Comparison
+
+```{r}
+accuracy_df <- data.frame(
+  Model = c("Logistic Regression", "KNN", "Decision Tree"),
+  Accuracy = c(accuracy1, accuracy2, accuracy3))
+
+ggplot(accuracy_df, aes(x=Model, y=Accuracy, fill=Model)) + geom_col()
+```
