@@ -6,4 +6,4 @@ We evaluated Logistic Regression, Random Forest, Decision Tree, and K-Nearest Ne
 
 Links: 
 - [Code](https://github.com/Brianwitarsa/Predictive-Modeling-for-Breast-Cancer-Diagnosis-Using-Machine-Learning/blob/main/FinalProjectMachineLearning.qmd)
-- [Presentation](https://github.com/Brianwitarsa/Predictive-Modeling-for-Breast-Cancer-Diagnosis-Using-Machine-Learning/blob/main/annotated-Final%2520Project_IML_DM-JB-BW.pptx.pdf)
+- [Presentation](https://github.com/Brianwitarsa/Predictive-Modeling-for-Breast-Cancer-Diagnosis-Using-Machine-Learning/blob/main/FNA_Project_ML_BW.pdf)
